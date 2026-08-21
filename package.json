@@ -1,17 +1,32 @@
 {
   "name": "strict-result",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "type": "module",
   "description": "Handle success and failure explicitly with a type-safe, Rust-inspired Result for TypeScript.",
   "license": "MIT",
   "author": "systemlayer",
-  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/systemlayer/strict-result.git"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
   "files": [
+    "dist",
     "src"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rm -rf dist",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
   }
 }
