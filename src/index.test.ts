@@ -1,7 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-
-import { Err, NamedErr, Ok, stringifyError, unpack } from "../src/index.ts"
+import { Err, NamedErr, Ok, stringifyError, unpack } from "./index.ts"
 
 test("Ok exposes and transforms its value", () => {
   const result = Ok(21)
