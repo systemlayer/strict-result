@@ -1,0 +1,17 @@
+{
+  "name": "strict-result",
+  "version": "1.0.0",
+  "description": "Handle success and failure explicitly with a type-safe, Rust-inspired Result for TypeScript.",
+  "license": "MIT",
+  "author": "systemlayer",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
