@@ -7,15 +7,20 @@ const resultOps = { isOk, isErr, unwrap, unwrapOr, map, mapOrElse, toJSON } as c
 
 type ResultOpsType = typeof resultOps
 
+/**
+ * Represents either a successful value or an error.
+ */
 export type Result<O, E = undefined>
   = | { type: Readonly<ResultType.Ok>, value: O } & ResultOpsType
     | { type: Readonly<ResultType.Err>, error: E } & ResultOpsType
 
+/** The successful branch of a {@link Result}, containing `value`. */
 export type OkResult<O, E = undefined> = Extract<
   Result<O, E>,
   { type: ResultType.Ok }
 >
 
+/** The failed branch of a {@link Result}, containing `error`. */
 export type ErrResult<O, E = undefined> = Extract<
   Result<O, E>,
   { type: ResultType.Err }
@@ -52,6 +57,13 @@ function inspect(obj: any): string {
   return JSON.stringify(obj, getCircularReplacer(), 2)
 }
 
+/**
+ * Converts an unknown thrown value into a useful string.
+ *
+ * Strings and `Error` messages are returned directly. Zod-like errors are
+ * represented by their issues, while other values are serialized with
+ * circular references replaced by `"[Circular]"`.
+ */
 export function stringifyError(error: unknown): string {
   if (typeof error === "string") {
     return error
@@ -67,18 +79,26 @@ export function stringifyError(error: unknown): string {
   return inspect(error)
 }
 
+/** Checks whether this result is an {@link OkResult} and narrows its type. */
 function isOk<O, E>(
   this: Result<O, E>,
 ): this is OkResult<O, E> {
   return this.type === ResultType.Ok
 }
 
+/** Checks whether this result is an {@link ErrResult} and narrows its type. */
 function isErr<O, E>(
   this: Result<O, E>,
 ): this is ErrResult<O, E> {
   return this.type === ResultType.Err
 }
 
+/**
+ * Extracts the successful value.
+ *
+ * @throws The contained error for an `Err`. Non-`Error` values are converted
+ * to an `Error` first.
+ */
 function unwrap<O, E>(this: Result<O, E>): O {
   if (this.isOk()) {
     return this.value
@@ -92,6 +112,7 @@ function unwrap<O, E>(this: Result<O, E>): O {
   throw new Error(inspect(this.error))
 }
 
+/** Extracts the successful value, or returns `defaultValue` for an `Err`. */
 function unwrapOr<O, E>(
   this: Result<O, E>,
   defaultValue: O,
@@ -102,6 +123,9 @@ function unwrapOr<O, E>(
   return defaultValue
 }
 
+/**
+ * Transforms the successful value with `fn`, leaving an `Err` unchanged.
+ */
 function map<O, E, U>(
   this: Result<O, E>,
   fn: (value: O) => U,
@@ -112,6 +136,9 @@ function map<O, E, U>(
   return this
 }
 
+/**
+ * Transforms an `Err` with `defaultFn` or an `Ok` with `mapFn`.
+ */
 function mapOrElse<O, E, U>(
   this: Result<O, E>,
   defaultFn: (error: E) => U,
@@ -123,10 +150,17 @@ function mapOrElse<O, E, U>(
   return defaultFn(this.error)
 }
 
+/** Creates a successful result containing `value`. */
 export function Ok<T>(value: T): OkResult<T> {
   return { type: ResultType.Ok, value, ...resultOps }
 }
 
+/**
+ * Creates a failed result.
+ *
+ * By default, `error` is normalized with {@link stringifyError}. Pass `true`
+ * for `raw` to preserve the original value and its type.
+ */
 export function Err<E>(error: E, raw: true): ErrResult<undefined, E>
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function Err<E>(
@@ -147,34 +181,38 @@ export function Err<E>(
 // -----------------------------------------------------------------------------
 
 /**
- * Converts the inner value into a JSON string. Returned string is not
- * guaranteed to be reversible into an usable value (due to circular references
- * and the way errors are stringified).
+ * Converts the contained value or error into a JSON-style string.
+ *
+ * The returned string is not guaranteed to be reversible because circular
+ * references are replaced and errors may be normalized.
  */
 function toJSON<O, E>(this: Result<O, E>): string {
   return this.isOk() ? inspect(this.value) : stringifyError(this.error)
 }
 
 /**
- * Creates a string `Err` prefixed with `name`. It automatically stringifies
- * whatever is passed as the `error` parameter.
+ * Creates a string `Err` whose normalized error is prefixed with `name`.
  */
 export function NamedErr(name: string, error: unknown): ErrResult<never, string> {
   return Err(`${name}: ${stringifyError(error)}`)
 }
 
+/**
+ * The object produced by {@link unpack}, containing a non-nullish value and an
+ * error or `null`.
+ */
 export type UnpackedResult<O, E> = {
   value: NonNullable<O>,
   error: E | null,
 }
 
 /**
- * Transforms a `Result` into an `UnpackedResult` object containing both `value`
- * and `error` fields.
- * * If the `Result` contains an error, returns the provided default value as
- *   `value` and the actual error.
- * * If the `Result` contains a value, returns the contained value and `null` for
- *   the error field.
+ * Converts a {@link Result} into an {@link UnpackedResult} with both `value` and
+ * `error` fields.
+ *
+ * - An `Err` uses `defaultValue` and preserves its error.
+ * - An `Ok` uses its contained value, or `defaultValue` if the contained value
+ *   is `null` or `undefined`, and sets `error` to `null`.
  */
 export const unpack = <O, E>(
   result: Result<O, E>,
