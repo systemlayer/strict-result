@@ -220,16 +220,16 @@ than treating `Ok(null)` as both the initial and successful empty state.
 
 #### `Result<O, E = undefined>`
 
-A union of `OkResult<O, E>` and `ErrResult<O, E>`. Every result has a `type`
+A union of `OkResult<O, E>` and `ErrResult<O, E>`. Every `Result` has a `type`
 discriminant (`"ok"` or `"err"`) and the methods listed below.
 
 #### `OkResult<O, E = undefined>`
 
-The successful branch of a result. Its payload is available as `value`.
+The successful branch of a `Result`. Its payload is available as `value`.
 
 #### `ErrResult<O, E = undefined>`
 
-The failed branch of a result. Its payload is available as `error`.
+The failed branch of a `Result`. Its payload is available as `error`.
 
 #### `UnpackedResult<O, E>`
 
@@ -240,11 +240,11 @@ An object returned by `unpack`, containing a non-nullish `value` and either an
 
 #### `Ok(value)`
 
-Creates a successful result containing `value`.
+Creates a successful `Result` containing `value`.
 
 #### `Err(error, raw?)`
 
-Creates a failed result. Without `raw`, the error is normalized to a string.
+Creates a failed `Result`. Without `raw`, the error is normalized to a string.
 Pass `true` to preserve the original error value and type.
 
 #### `NamedErr(name, error)`
@@ -259,15 +259,15 @@ Converts an unknown thrown value to a useful string. It handles strings,
 
 #### `unpack(result, defaultValue)`
 
-Converts a result into `{ value, error }`. An `Err` uses `defaultValue`; an
+Converts a `Result` into `{ value, error }`. An `Err` uses `defaultValue`; an
 `Ok` uses its contained value, or `defaultValue` when that value is nullish.
 
 ### Result methods
 
 | Method | Description |
 | --- | --- |
-| `isOk()` | Returns `true` for an `Ok` and narrows the result type. |
-| `isErr()` | Returns `true` for an `Err` and narrows the result type. |
+| `isOk()` | Returns `true` for an `Ok` and narrows the `Result` type. |
+| `isErr()` | Returns `true` for an `Err` and narrows the `Result` type. |
 | `unwrap()` | Returns the successful value or throws the error. |
 | `unwrapOr(defaultValue)` | Returns the successful value or a fallback. |
 | `map(fn)` | Transforms an `Ok` value and leaves an `Err` unchanged. |
