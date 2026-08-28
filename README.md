@@ -1,5 +1,9 @@
 # strict-result
 
+[![npm version](https://img.shields.io/npm/v/strict-result.svg)](https://www.npmjs.com/package/strict-result)
+[![npm downloads](https://img.shields.io/npm/dm/strict-result.svg)](https://www.npmjs.com/package/strict-result)
+[![license](https://img.shields.io/npm/l/strict-result.svg)](https://github.com/systemlayer/strict-result/blob/main/package.json)
+
 Handle success and failure explicitly with a type-safe, Rust-inspired `Result`
 for TypeScript.
 
@@ -20,6 +24,17 @@ must distinguish between them before TypeScript allows access to the successful
 value. This encourages developers to handle expected failures where they occur,
 rather than throwing exceptions or optimistically assuming an operation will
 succeed.
+
+## When to return a Result
+
+Return `Result` for expected failures that callers may reasonably handle or
+propagate, such as invalid input, a failed network request, or a required record
+not being found.
+
+Throw when the program reaches an unrecoverable state, such as a violated
+invariant or a condition that should be impossible. As with Rust's `panic!`,
+throwing should indicate a bug or failed assumption, not serve as the normal way
+to report operational failures.
 
 ## Features
 

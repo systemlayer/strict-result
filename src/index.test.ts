@@ -10,6 +10,7 @@ test("Ok exposes and transforms its value", () => {
   assert.equal(result.unwrap(), 21)
   assert.equal(result.unwrapOr(0), 21)
   assert.deepEqual(result.map((value) => value * 2), Ok(42))
+  assert.deepEqual(result.mapErr(() => "mapped"), Ok(21))
   assert.equal(result.mapOrElse(() => 0, (value) => value + 1), 22)
   assert.equal(result.toJSON(), "21")
 })
@@ -23,6 +24,7 @@ test("Err preserves raw errors and uses fallback operations", () => {
   assert.equal(result.error, error)
   assert.equal(result.unwrapOr("fallback"), "fallback")
   assert.equal(result.map(() => "mapped"), result)
+  assert.deepEqual(result.mapErr((value) => value.code), Err("broken", true))
   assert.equal(result.mapOrElse((value) => value.code, () => "mapped"), "broken")
   assert.equal(result.toJSON(), '{\n  "code": "broken"\n}')
 })
@@ -31,6 +33,10 @@ test("Err stringifies errors unless raw mode is requested", () => {
   assert.equal(Err("failure").error, "failure")
   assert.equal(Err(new Error("failure")).error, "failure")
   assert.equal(Err({ reason: "failure" }).error, '{\n  "reason": "failure"\n}')
+})
+
+test("Err has the same inner value in raw and default modes for strings", () => {
+  assert.equal(Err("failure", true).error, Err("failure").error)
 })
 
 test("unwrap throws strings, Error instances, and structured errors", () => {

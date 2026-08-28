@@ -3,7 +3,7 @@ const enum ResultType {
   Err = "err",
 }
 
-const resultOps = { isOk, isErr, unwrap, unwrapOr, map, mapOrElse, toJSON } as const
+const resultOps = { isOk, isErr, unwrap, unwrapOr, map, mapErr, mapOrElse, toJSON } as const
 
 type ResultOpsType = typeof resultOps
 
@@ -137,7 +137,23 @@ function map<O, E, U>(
 }
 
 /**
+ * Transforms the error with `fn`, leaving an `Ok` unchanged.
+ */
+function mapErr<O, E, U>(
+  this: Result<O, E>,
+  fn: (error: E) => U,
+): Result<O, U> {
+  if (this.isErr()) {
+    return Err(fn(this.error), true)
+  }
+  return this
+}
+
+/**
  * Transforms an `Err` with `defaultFn` or an `Ok` with `mapFn`.
+ *
+ * The parameter order matches Rust's `Result::map_or_else`. Although unusual,
+ * it can be read as "map if error, or else map the successful value."
  */
 function mapOrElse<O, E, U>(
   this: Result<O, E>,
