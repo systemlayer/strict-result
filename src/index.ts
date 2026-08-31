@@ -125,7 +125,7 @@ function map<O, E, U>(
   fn: (value: O) => U,
 ): Result<U, E> {
   if (this.isOk()) {
-    return Ok(fn(this.value)) as Result<U, E>
+    return Ok(fn(this.value))
   }
   return this
 }
