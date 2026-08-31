@@ -38,8 +38,9 @@ to report operational failures.
 
 ## Features
 
-- Discriminated `Result<Ok, Error>` union with TypeScript type narrowing
-- Familiar helpers such as `map`, `unwrap`, `unwrapOr`, and `mapOrElse`
+- Discriminated `Result<O, E>` union with TypeScript type narrowing
+- Familiar helpers such as `map`, `mapErr`, `unwrap`, `unwrapOr`, and
+  `mapOrElse`
 - String errors by default, with opt-in support for custom error types
 - Utilities for normalizing unknown errors and unpacking results
 - Small, dependency-free ESM package
@@ -70,7 +71,7 @@ const result = await safeFetch("https://jsonplaceholder.typicode.com/todos/1")
 if (result.isErr()) {
   console.error(`Request failed: ${result.error}`)
 } else {
-  // result is narrowed to OkResult<Response> here.
+  // result is narrowed to OkBranch<Response> here.
   console.log(await result.value.json())
 }
 ```
@@ -166,12 +167,18 @@ doubled.unwrap() // 42
 const unavailable: Result<string, string> = Err("not available")
 unavailable.unwrapOr("fallback") // "fallback"
 
+const status = unavailable.mapErr((error) => ({ message: error }))
+// Err({ message: "not available" })
+
 const message = Ok(3).mapOrElse(
   (error) => `Failed: ${error}`,
   (value) => `Received: ${value}`,
 )
 // "Received: 3"
 ```
+
+`map()` transforms only the successful value, while `mapErr()` transforms only
+the error. The other branch is returned unchanged.
 
 `unwrap()` returns an `Ok` value and throws when called on an `Err`. Prefer
 `isOk()`, `isErr()`, `unwrapOr()`, or `mapOrElse()` when failure is expected.
@@ -235,14 +242,14 @@ than treating `Ok(null)` as both the initial and successful empty state.
 
 #### `Result<O, E = undefined>`
 
-A union of `OkResult<O, E>` and `ErrResult<O, E>`. Every `Result` has a `type`
+A union of `OkBranch<O>` and `ErrBranch<E>`. Every `Result` has a `type`
 discriminant (`"ok"` or `"err"`) and the methods listed below.
 
-#### `OkResult<O, E = undefined>`
+#### `OkBranch<O>`
 
 The successful branch of a `Result`. Its payload is available as `value`.
 
-#### `ErrResult<O, E = undefined>`
+#### `ErrBranch<E>`
 
 The failed branch of a `Result`. Its payload is available as `error`.
 
@@ -283,9 +290,10 @@ Converts a `Result` into `{ value, error }`. An `Err` uses `defaultValue`; an
 | --- | --- |
 | `isOk()` | Returns `true` for an `Ok` and narrows the `Result` type. |
 | `isErr()` | Returns `true` for an `Err` and narrows the `Result` type. |
-| `unwrap()` | Returns the successful value or throws the error. |
+| `unwrap()` | Extracts the value from an `Ok`; throws when called on an `Err`. |
 | `unwrapOr(defaultValue)` | Returns the successful value or a fallback. |
 | `map(fn)` | Transforms an `Ok` value and leaves an `Err` unchanged. |
+| `mapErr(fn)` | Transforms an `Err` error and leaves an `Ok` unchanged. |
 | `mapOrElse(defaultFn, mapFn)` | Maps either branch into a plain value. |
 | `toJSON()` | Converts the contained value or error to a JSON-style string. |
 

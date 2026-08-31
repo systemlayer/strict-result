@@ -7,24 +7,18 @@ const resultOps = { isOk, isErr, unwrap, unwrapOr, map, mapErr, mapOrElse, toJSO
 
 type ResultOpsType = typeof resultOps
 
+/** The successful branch of a {@link Result}, containing `value`. */
+export type OkBranch<O> = { type: Readonly<ResultType.Ok>, value: O } & ResultOpsType
+
+/** The failed branch of a {@link Result}, containing `error`. */
+export type ErrBranch<E> = { type: Readonly<ResultType.Err>, error: E } & ResultOpsType
+
 /**
  * Represents either a successful value or an error.
  */
 export type Result<O, E = undefined>
-  = | { type: Readonly<ResultType.Ok>, value: O } & ResultOpsType
-    | { type: Readonly<ResultType.Err>, error: E } & ResultOpsType
-
-/** The successful branch of a {@link Result}, containing `value`. */
-export type OkResult<O, E = undefined> = Extract<
-  Result<O, E>,
-  { type: ResultType.Ok }
->
-
-/** The failed branch of a {@link Result}, containing `error`. */
-export type ErrResult<O, E = undefined> = Extract<
-  Result<O, E>,
-  { type: ResultType.Err }
->
+  = | OkBranch<O>
+    | ErrBranch<E>
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Cyclic_object_value#examples
 function getCircularReplacer() {
@@ -82,14 +76,14 @@ export function stringifyError(error: unknown): string {
 /** Checks whether this result is an {@link OkResult} and narrows its type. */
 function isOk<O, E>(
   this: Result<O, E>,
-): this is OkResult<O, E> {
+): this is OkBranch<O> {
   return this.type === ResultType.Ok
 }
 
 /** Checks whether this result is an {@link ErrResult} and narrows its type. */
 function isErr<O, E>(
   this: Result<O, E>,
-): this is ErrResult<O, E> {
+): this is ErrBranch<E> {
   return this.type === ResultType.Err
 }
 
@@ -131,7 +125,7 @@ function map<O, E, U>(
   fn: (value: O) => U,
 ): Result<U, E> {
   if (this.isOk()) {
-    return Ok(fn(this.value))
+    return Ok(fn(this.value)) as Result<U, E>
   }
   return this
 }
@@ -167,7 +161,7 @@ function mapOrElse<O, E, U>(
 }
 
 /** Creates a successful result containing `value`. */
-export function Ok<T>(value: T): OkResult<T> {
+export function Ok<T>(value: T): OkBranch<T> {
   return { type: ResultType.Ok, value, ...resultOps }
 }
 
@@ -177,16 +171,16 @@ export function Ok<T>(value: T): OkResult<T> {
  * By default, `error` is normalized with {@link stringifyError}. Pass `true`
  * for `raw` to preserve the original value and its type.
  */
-export function Err<E>(error: E, raw: true): ErrResult<undefined, E>
+export function Err<E>(error: E, raw: true): ErrBranch<E>
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function Err<E>(
   error: unknown,
   raw?: false,
-): ErrResult<undefined, string>
+): ErrBranch<string>
 export function Err<E>(
   error: E | unknown,
   raw = false,
-): ErrResult<undefined, E> | ErrResult<undefined, string> {
+): ErrBranch<E> | ErrBranch<string> {
   return raw
     ? { type: ResultType.Err, error: error as E, ...resultOps }
     : { type: ResultType.Err, error: stringifyError(error), ...resultOps }
@@ -209,7 +203,7 @@ function toJSON<O, E>(this: Result<O, E>): string {
 /**
  * Creates a string `Err` whose normalized error is prefixed with `name`.
  */
-export function NamedErr(name: string, error: unknown): ErrResult<never, string> {
+export function NamedErr(name: string, error: unknown): ErrBranch<string> {
   return Err(`${name}: ${stringifyError(error)}`)
 }
 
