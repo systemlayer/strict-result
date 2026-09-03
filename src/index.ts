@@ -50,10 +50,16 @@ const resultOps: {
 type ResultOpsType = typeof resultOps
 
 /** The successful branch of a {@link Result}, containing `value`. */
-export type OkBranch<O> = { type: Readonly<ResultType.Ok>, value: O } & ResultOpsType
+export type OkBranch<O> = {
+  readonly type: ResultType.Ok,
+  readonly value: O,
+} & ResultOpsType
 
 /** The failed branch of a {@link Result}, containing `error`. */
-export type ErrBranch<E> = { type: Readonly<ResultType.Err>, error: E } & ResultOpsType
+export type ErrBranch<E> = {
+  readonly type: ResultType.Err,
+  readonly error: E,
+} & ResultOpsType
 
 /**
  * Represents either a successful value or an error.

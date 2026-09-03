@@ -41,6 +41,21 @@ function assertResultOpsTypes(result: Result<number, { code: string }>): void {
   result.mapErr((error: number) => error)
 }
 
+// This helper is never called; TypeScript checks its body to ensure these properties stay readonly.
+function assertResultInvariantsAreReadonly(
+  ok: OkBranch<number>,
+  error: ErrBranch<{ code: string }>,
+): void {
+  // @ts-expect-error The Ok discriminator is readonly.
+  ok.type = "ok"
+  // @ts-expect-error The successful value is readonly.
+  ok.value = 42
+  // @ts-expect-error The Err discriminator is readonly.
+  error.type = "err"
+  // @ts-expect-error The contained error is readonly.
+  error.error = { code: "changed" }
+}
+
 test("isOk and isErr identify both result branches", () => {
   const ok = Ok(21)
   const error = Err("failure")
@@ -215,3 +230,4 @@ test("unpack returns the fallback and error for Err", () => {
 // Reference the helper so it remains part of strict compile-time type checking.
 // Using void avoids executing assertions that intentionally contain invalid types.
 void assertResultOpsTypes
+void assertResultInvariantsAreReadonly
