@@ -116,7 +116,7 @@ By convention, name custom error helpers in PascalCase and end their names with
 constructors rather than `Error` classes or general-purpose functions.
 
 ```ts
-import { Err, stringifyError, type Result } from "strict-result"
+import { Err, stringifyError, type ErrBranch } from "strict-result"
 
 interface HttpRequestError {
   message: string
@@ -126,7 +126,7 @@ interface HttpRequestError {
 function HttpErr(
   error: unknown,
   status?: number,
-): Result<never, HttpRequestError> {
+): ErrBranch<HttpRequestError> {
   return Err({ message: stringifyError(error), status }, true)
 }
 ```
