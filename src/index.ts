@@ -77,38 +77,31 @@ function getCircularReplacer() {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function inspect(obj: any): string {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore: TS is not aware of the variable on some environments
-  if (typeof Deno !== "undefined") {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore: TS is not aware of the variable on some environments
-    return Deno.inspect(obj)
-  }
-  return JSON.stringify(obj, getCircularReplacer(), 2)
-}
-
 /**
  * Converts an unknown value into a useful display string.
  *
  * Strings and `Error` messages are returned directly. Zod-like errors are
  * represented by their issues, while other values are serialized with
  * circular references replaced by `"[Circular]"`.
+ *
+ * @param value The value to convert into a display string.
+ * @param pretty Whether to indent serialized JSON for readability.
  */
-export function toDisplayString(value: unknown): string {
+export function toDisplayString(value: unknown, pretty = false): string {
   if (typeof value === "string") {
     return value
   }
+  const indent  = pretty ? 2 : undefined
   const isZodError = !!value && (typeof value === "object") && ("name" in value)
     && ("issues" in value) && (value.name === "ZodError")
   if (isZodError) {
-    return JSON.stringify(value.issues, null, 2)
+    return JSON.stringify(value.issues, null, indent)
   }
   if (value instanceof Error) {
     return value.message
   }
-  return inspect(value)
+  // JSON.stringify can return undefined for values it cannot serialize.
+  return JSON.stringify(value, getCircularReplacer(), indent) ?? String(value)
 }
 
 function isOk<O, E>(this: Result<O, E>): this is OkBranch<O> {
@@ -129,7 +122,7 @@ function unwrap<O, E>(this: Result<O, E>): O {
   if (this.error instanceof Error) {
     throw this.error
   }
-  throw new Error(inspect(this.error))
+  throw new Error(toDisplayString(this.error))
 }
 
 function unwrapOr<O, E>(this: Result<O, E>, defaultValue: O): O {
@@ -201,7 +194,7 @@ export function Err<E>(
 // -----------------------------------------------------------------------------
 
 function toJSON<O, E>(this: Result<O, E>): string {
-  return this.isOk() ? inspect(this.value) : toDisplayString(this.error)
+  return toDisplayString(this.isOk() ? this.value : this.error)
 }
 
 /**

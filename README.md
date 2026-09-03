@@ -274,10 +274,14 @@ Pass `true` to preserve the original error value and type.
 Creates a string error prefixed with a name, such as
 `NamedErr("parse", error)`.
 
-#### `toDisplayString(value)`
+#### `toDisplayString(value, pretty?)`
 
-Converts an unknown value to a useful display string. It handles strings,
-`Error` instances, Zod-like errors, plain objects, and circular references.
+Converts an unknown value to a useful display string. Strings and `Error`
+messages are returned directly, Zod-like errors are represented by their
+`issues`, and other values are serialized as compact JSON. Circular references
+are replaced by `"[Circular]"`. Pass `true` for `pretty` to indent serialized
+JSON with two spaces. If JSON serialization returns `undefined`, the value is
+converted with `String(value)` instead.
 
 #### `unpack(result, defaultValue)`
 

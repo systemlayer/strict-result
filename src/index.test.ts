@@ -65,7 +65,7 @@ test("unwrap throws strings, Error instances, and structured errors", () => {
   assert.throws(
     () => Err({ reason: "failure" }, true).unwrap(),
     (thrown: unknown) => thrown instanceof Error
-      && thrown.message === '{\n  "reason": "failure"\n}',
+      && thrown.message === '{"reason":"failure"}',
   )
 })
 
@@ -154,23 +154,23 @@ test("mapOrElse invokes only the Err callback with the error", () => {
 
 test("toJSON serializes successful primitives and structured values", () => {
   assert.equal(Ok(21).toJSON(), "21")
-  assert.equal(Ok("value").toJSON(), '"value"')
+  assert.equal(Ok("value").toJSON(), "value")
   const circular: { self?: unknown } = {}
   circular.self = circular
-  assert.equal(Ok(circular).toJSON(), '{\n  "self": "[Circular]"\n}')
+  assert.equal(Ok(circular).toJSON(), '{"self":"[Circular]"}')
 })
 
 test("toJSON serializes raw errors according to their shape", () => {
   assert.equal(Err("failure", true).toJSON(), "failure")
   assert.equal(Err(new Error("failure"), true).toJSON(), "failure")
-  assert.equal(Err({ code: "broken" }, true).toJSON(), '{\n  "code": "broken"\n}')
+  assert.equal(Err({ code: "broken" }, true).toJSON(), '{"code":"broken"}')
 })
 
 test("Err stringifies errors unless raw mode is requested", () => {
   const error = { reason: "failure" }
   assert.equal(Err("failure").error, "failure")
   assert.equal(Err(new Error("failure")).error, "failure")
-  assert.equal(Err(error).error, '{\n  "reason": "failure"\n}')
+  assert.equal(Err(error).error, '{"reason":"failure"}')
   assert.equal(Err(error, true).error, error)
 })
 
@@ -180,10 +180,16 @@ test("Err has the same inner value in raw and default modes for strings", () => 
 
 test("toDisplayString handles Zod-like and circular values", () => {
   const zodError = { name: "ZodError", issues: [{ path: ["name"], message: "Required" }] }
-  assert.equal(toDisplayString(zodError), JSON.stringify(zodError.issues, null, 2))
+  assert.equal(toDisplayString(zodError), JSON.stringify(zodError.issues))
   const circular: { self?: unknown } = {}
   circular.self = circular
-  assert.equal(toDisplayString(circular), '{\n  "self": "[Circular]"\n}')
+  assert.equal(toDisplayString(circular), '{"self":"[Circular]"}')
+  assert.equal(toDisplayString(circular, true), '{\n  "self": "[Circular]"\n}')
+})
+
+test("toDisplayString falls back when JSON.stringify returns undefined", () => {
+  assert.equal(toDisplayString(undefined), "undefined")
+  assert.equal(toDisplayString(Symbol("value")), "Symbol(value)")
 })
 
 test("NamedErr prefixes a stringified error", () => {
