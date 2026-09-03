@@ -3,7 +3,45 @@ const enum ResultType {
   Err = "err",
 }
 
-const resultOps = { isOk, isErr, unwrap, unwrapOr, map, mapErr, mapOrElse, toJSON } as const
+// Declare readonly properties directly so emitted declarations retain their JSDoc;
+// wrapping the object type in Readonly could obscure it behind a mapped type in editors.
+const resultOps: {
+  /** Checks whether this result is an {@link OkBranch} and narrows its type. */
+  readonly isOk: <O, E>(this: Result<O, E>) => this is OkBranch<O>,
+  /** Checks whether this result is an {@link ErrBranch} and narrows its type. */
+  readonly isErr: <O, E>(this: Result<O, E>) => this is ErrBranch<E>,
+  /**
+   * Extracts the successful value.
+   *
+   * @throws The contained error for an `Err`. Non-`Error` values are converted
+   * to an `Error` first.
+   */
+  readonly unwrap: <O, E>(this: Result<O, E>) => O,
+  /** Extracts the successful value, or returns `defaultValue` for an `Err`. */
+  readonly unwrapOr: <O, E>(this: Result<O, E>, defaultValue: O) => O,
+  /** Transforms the successful value with `fn`, leaving an `Err` unchanged. */
+  readonly map: <O, E, U>(this: Result<O, E>, fn: (value: O) => U) => Result<U, E>,
+  /** Transforms the error with `fn`, leaving an `Ok` unchanged. */
+  readonly mapErr: <O, E, U>(this: Result<O, E>, fn: (error: E) => U) => Result<O, U>,
+  /**
+   * Transforms an `Err` with `defaultFn` or an `Ok` with `mapFn`.
+   *
+   * The parameter order matches Rust's `Result::map_or_else`. Although unusual,
+   * it can be read as "map if error, or else map the successful value."
+   */
+  readonly mapOrElse: <O, E, U>(
+    this: Result<O, E>,
+    defaultFn: (error: E) => U,
+    mapFn: (value: O) => U,
+  ) => U,
+  /**
+   * Converts the contained value or error into a JSON-style string.
+   *
+   * The returned string is not guaranteed to be reversible because circular
+   * references are replaced and errors may be normalized.
+   */
+  readonly toJSON: <O, E>(this: Result<O, E>) => string,
+} = { isOk, isErr, unwrap, unwrapOr, map, mapErr, mapOrElse, toJSON }
 
 type ResultOpsType = typeof resultOps
 
@@ -73,26 +111,14 @@ export function stringifyError(error: unknown): string {
   return inspect(error)
 }
 
-/** Checks whether this result is an {@link OkResult} and narrows its type. */
-function isOk<O, E>(
-  this: Result<O, E>,
-): this is OkBranch<O> {
+function isOk<O, E>(this: Result<O, E>): this is OkBranch<O> {
   return this.type === ResultType.Ok
 }
 
-/** Checks whether this result is an {@link ErrResult} and narrows its type. */
-function isErr<O, E>(
-  this: Result<O, E>,
-): this is ErrBranch<E> {
+function isErr<O, E>(this: Result<O, E>): this is ErrBranch<E> {
   return this.type === ResultType.Err
 }
 
-/**
- * Extracts the successful value.
- *
- * @throws The contained error for an `Err`. Non-`Error` values are converted
- * to an `Error` first.
- */
 function unwrap<O, E>(this: Result<O, E>): O {
   if (this.isOk()) {
     return this.value
@@ -106,20 +132,13 @@ function unwrap<O, E>(this: Result<O, E>): O {
   throw new Error(inspect(this.error))
 }
 
-/** Extracts the successful value, or returns `defaultValue` for an `Err`. */
-function unwrapOr<O, E>(
-  this: Result<O, E>,
-  defaultValue: O,
-): O {
+function unwrapOr<O, E>(this: Result<O, E>, defaultValue: O): O {
   if (this.isOk()) {
     return this.value
   }
   return defaultValue
 }
 
-/**
- * Transforms the successful value with `fn`, leaving an `Err` unchanged.
- */
 function map<O, E, U>(
   this: Result<O, E>,
   fn: (value: O) => U,
@@ -130,9 +149,6 @@ function map<O, E, U>(
   return this
 }
 
-/**
- * Transforms the error with `fn`, leaving an `Ok` unchanged.
- */
 function mapErr<O, E, U>(
   this: Result<O, E>,
   fn: (error: E) => U,
@@ -143,12 +159,6 @@ function mapErr<O, E, U>(
   return this
 }
 
-/**
- * Transforms an `Err` with `defaultFn` or an `Ok` with `mapFn`.
- *
- * The parameter order matches Rust's `Result::map_or_else`. Although unusual,
- * it can be read as "map if error, or else map the successful value."
- */
 function mapOrElse<O, E, U>(
   this: Result<O, E>,
   defaultFn: (error: E) => U,
@@ -190,12 +200,6 @@ export function Err<E>(
 // Additional functionality for Result that do not have a Rust equivalent.
 // -----------------------------------------------------------------------------
 
-/**
- * Converts the contained value or error into a JSON-style string.
- *
- * The returned string is not guaranteed to be reversible because circular
- * references are replaced and errors may be normalized.
- */
 function toJSON<O, E>(this: Result<O, E>): string {
   return this.isOk() ? inspect(this.value) : stringifyError(this.error)
 }
