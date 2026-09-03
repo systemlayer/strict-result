@@ -208,10 +208,10 @@ function resultToDisplayString<O, E>(this: Result<O, E>): string {
 }
 
 /**
- * Creates a string `Err` whose normalized error is prefixed with `name`.
+ * Creates a string `Err` whose normalized error is prefixed with `prefix`.
  */
-export function NamedErr(name: string, error: unknown): ErrBranch<string> {
-  return Err(`${name}: ${toDisplayString(error)}`)
+export function PrefixedErr(prefix: string, error: unknown): ErrBranch<string> {
+  return Err(`${prefix}: ${toDisplayString(error)}`)
 }
 
 /**

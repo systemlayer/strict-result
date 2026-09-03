@@ -269,10 +269,10 @@ Creates a successful `Result` containing `value`.
 Creates a failed `Result`. Without `raw`, the error is normalized to a string.
 Pass `true` to preserve the original error value and type.
 
-#### `NamedErr(name, error)`
+#### `PrefixedErr(prefix, error)`
 
-Creates a string error prefixed with a name, such as
-`NamedErr("parse", error)`.
+Creates a string error with a prefix, such as
+`PrefixedErr("could not parse", error)`.
 
 #### `toDisplayString(value, pretty?)`
 

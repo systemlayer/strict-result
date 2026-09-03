@@ -2,8 +2,8 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   Err,
-  NamedErr,
   Ok,
+  PrefixedErr,
   toDisplayString,
   unpack,
   type ErrBranch,
@@ -210,8 +210,11 @@ test("toDisplayString falls back when JSON.stringify returns undefined", () => {
   assert.equal(toDisplayString(Symbol("value")), "Symbol(value)")
 })
 
-test("NamedErr prefixes a stringified error", () => {
-  assert.deepEqual(NamedErr("parse", new Error("invalid input")), Err("parse: invalid input"))
+test("PrefixedErr prefixes a stringified error", () => {
+  assert.deepEqual(
+    PrefixedErr("could not parse", new Error("invalid input")),
+    Err("could not parse: invalid input"),
+  )
 })
 
 test("unpack returns successful values and substitutes nullish values", () => {
