@@ -1,52 +1,181 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { Err, NamedErr, Ok, stringifyError, unpack } from "./index.ts"
+import {
+  Err,
+  NamedErr,
+  Ok,
+  stringifyError,
+  unpack,
+  type ErrBranch,
+  type OkBranch,
+  type Result,
+} from "./index.ts"
 
-test("Ok exposes and transforms its value", () => {
-  const result = Ok(21)
-  assert.equal(result.type, "ok")
-  assert.equal(result.isOk(), true)
-  assert.equal(result.isErr(), false)
-  assert.equal(result.unwrap(), 21)
-  assert.equal(result.unwrapOr(0), 21)
-  assert.deepEqual(result.map((value) => value * 2), Ok(42))
-  assert.deepEqual(result.mapErr(() => "mapped"), Ok(21))
-  assert.equal(result.mapOrElse(() => 0, (value) => value + 1), 22)
-  assert.equal(result.toJSON(), "21")
+function assertResultOpsTypes(result: Result<number, { code: string }>): void {
+  if (result.isOk()) {
+    const ok: OkBranch<number> = result
+    void ok
+    // @ts-expect-error An Ok branch has no error.
+    void result.error
+  }
+  if (result.isErr()) {
+    const error: ErrBranch<{ code: string }> = result
+    void error
+    // @ts-expect-error An Err branch has no value.
+    void result.value
+  }
+  const value: number = result.unwrap()
+  const fallback: number = result.unwrapOr(0)
+  const mapped: Result<string, { code: string }> = result.map(value => `${value}`)
+  const mappedError: Result<number, string> = result.mapErr(error => error.code)
+  const folded: string = result.mapOrElse(error => error.code, value => `${value}`)
+  const json: string = result.toJSON()
+  void [value, fallback, mapped, mappedError, folded, json]
+  // @ts-expect-error The fallback must match the successful value type.
+  result.unwrapOr("fallback")
+  // @ts-expect-error The map callback receives the successful value type.
+  result.map((value: string) => value)
+  // @ts-expect-error The mapErr callback receives the error type.
+  result.mapErr((error: number) => error)
+}
+
+test("isOk and isErr identify both result branches", () => {
+  const ok = Ok(21)
+  const error = Err("failure")
+  assert.equal(ok.type, "ok")
+  assert.equal(ok.isOk(), true)
+  assert.equal(ok.isErr(), false)
+  assert.equal(error.type, "err")
+  assert.equal(error.isOk(), false)
+  assert.equal(error.isErr(), true)
 })
 
-test("Err preserves raw errors and uses fallback operations", () => {
-  const error = { code: "broken" }
-  const result = Err(error, true)
-  assert.equal(result.type, "err")
-  assert.equal(result.isOk(), false)
-  assert.equal(result.isErr(), true)
-  assert.equal(result.error, error)
-  assert.equal(result.unwrapOr("fallback"), "fallback")
-  assert.equal(result.map(() => "mapped"), result)
-  assert.deepEqual(result.mapErr((value) => value.code), Err("broken", true))
-  assert.equal(result.mapOrElse((value) => value.code, () => "mapped"), "broken")
-  assert.equal(result.toJSON(), '{\n  "code": "broken"\n}')
-})
-
-test("Err stringifies errors unless raw mode is requested", () => {
-  assert.equal(Err("failure").error, "failure")
-  assert.equal(Err(new Error("failure")).error, "failure")
-  assert.equal(Err({ reason: "failure" }).error, '{\n  "reason": "failure"\n}')
-})
-
-test("Err has the same inner value in raw and default modes for strings", () => {
-  assert.equal(Err("failure", true).error, Err("failure").error)
+test("unwrap returns the exact successful value", () => {
+  const value = { answer: 42 }
+  assert.equal(Ok(value).unwrap(), value)
 })
 
 test("unwrap throws strings, Error instances, and structured errors", () => {
-  assert.throws(() => Err("failure", true).unwrap(), new Error("failure"))
+  assert.throws(
+    () => Err("failure", true).unwrap(),
+    (thrown: unknown) => thrown instanceof Error && thrown.message === "failure",
+  )
   const error = new TypeError("failure")
   assert.throws(() => Err(error, true).unwrap(), (thrown: unknown) => thrown === error)
   assert.throws(
     () => Err({ reason: "failure" }, true).unwrap(),
-    (thrown: unknown) => thrown instanceof Error && thrown.message.includes('"reason": "failure"'),
+    (thrown: unknown) => thrown instanceof Error
+      && thrown.message === '{\n  "reason": "failure"\n}',
   )
+})
+
+test("unwrapOr selects the successful value or exact fallback", () => {
+  const value = { source: "ok" }
+  const fallback = { source: "fallback" }
+  assert.equal(Ok(value).unwrapOr(fallback), value)
+  assert.equal(Err("failure").unwrapOr(fallback), fallback)
+})
+
+test("map invokes its callback once and returns a chainable Ok", () => {
+  let invocations = 0
+  const mapped = Ok(21).map((value) => {
+    invocations += 1
+    assert.equal(value, 21)
+    return value * 2
+  })
+  assert.equal(invocations, 1)
+  assert.deepEqual(mapped, Ok(42))
+  assert.equal(mapped.map(value => value + 1).unwrap(), 43)
+})
+
+test("map leaves an Err unchanged without invoking its callback", () => {
+  const result = Err({ code: "broken" }, true)
+  const mapped = result.map(() => {
+    throw new Error("unexpected map callback")
+  })
+  assert.equal(mapped, result)
+})
+
+test("mapErr invokes its callback once and preserves the raw mapped error", () => {
+  const mappedError = new TypeError("mapped")
+  let invocations = 0
+  const mapped = Err({ code: "broken" }, true).mapErr((error) => {
+    invocations += 1
+    assert.equal(error.code, "broken")
+    return mappedError
+  })
+  assert.equal(invocations, 1)
+  assert.equal(mapped.isErr(), true)
+  if (!mapped.isErr()) {
+    assert.fail("mapErr returned an Ok")
+  }
+  assert.equal(mapped.error, mappedError)
+  const remapped = mapped.mapErr(error => error.message)
+  assert.equal(remapped.isErr(), true)
+  if (!remapped.isErr()) {
+    assert.fail("a chained mapErr returned an Ok")
+  }
+  assert.equal(remapped.error, "mapped")
+})
+
+test("mapErr leaves an Ok unchanged without invoking its callback", () => {
+  const result = Ok(21)
+  const mapped = result.mapErr(() => {
+    throw new Error("unexpected mapErr callback")
+  })
+  assert.equal(mapped, result)
+})
+
+test("mapOrElse invokes only the Ok callback with the successful value", () => {
+  let invocations = 0
+  const output = Ok(21).mapOrElse(
+    () => { throw new Error("unexpected error callback") },
+    (value) => {
+      invocations += 1
+      return { doubled: value * 2 }
+    },
+  )
+  assert.equal(invocations, 1)
+  assert.deepEqual(output, { doubled: 42 })
+})
+
+test("mapOrElse invokes only the Err callback with the error", () => {
+  let invocations = 0
+  const output = Err({ code: "broken" }, true).mapOrElse(
+    (error) => {
+      invocations += 1
+      return { message: error.code }
+    },
+    () => { throw new Error("unexpected value callback") },
+  )
+  assert.equal(invocations, 1)
+  assert.deepEqual(output, { message: "broken" })
+})
+
+test("toJSON serializes successful primitives and structured values", () => {
+  assert.equal(Ok(21).toJSON(), "21")
+  assert.equal(Ok("value").toJSON(), '"value"')
+  const circular: { self?: unknown } = {}
+  circular.self = circular
+  assert.equal(Ok(circular).toJSON(), '{\n  "self": "[Circular]"\n}')
+})
+
+test("toJSON serializes raw errors according to their shape", () => {
+  assert.equal(Err("failure", true).toJSON(), "failure")
+  assert.equal(Err(new Error("failure"), true).toJSON(), "failure")
+  assert.equal(Err({ code: "broken" }, true).toJSON(), '{\n  "code": "broken"\n}')
+})
+
+test("Err stringifies errors unless raw mode is requested", () => {
+  const error = { reason: "failure" }
+  assert.equal(Err("failure").error, "failure")
+  assert.equal(Err(new Error("failure")).error, "failure")
+  assert.equal(Err(error).error, '{\n  "reason": "failure"\n}')
+  assert.equal(Err(error, true).error, error)
+})
+
+test("Err has the same inner value in raw and default modes for strings", () => {
+  assert.equal(Err("failure", true).error, Err("failure").error)
 })
 
 test("stringifyError handles Zod-like and circular values", () => {
@@ -73,3 +202,7 @@ test("unpack returns the fallback and error for Err", () => {
   const error = { code: 500 }
   assert.deepEqual(unpack(Err(error, true), "fallback"), { value: "fallback", error })
 })
+
+// Reference the helper so it remains part of strict compile-time type checking.
+// Using void avoids executing assertions that intentionally contain invalid types.
+void assertResultOpsTypes
