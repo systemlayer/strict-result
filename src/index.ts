@@ -90,25 +90,25 @@ function inspect(obj: any): string {
 }
 
 /**
- * Converts an unknown thrown value into a useful string.
+ * Converts an unknown value into a useful display string.
  *
  * Strings and `Error` messages are returned directly. Zod-like errors are
  * represented by their issues, while other values are serialized with
  * circular references replaced by `"[Circular]"`.
  */
-export function stringifyError(error: unknown): string {
-  if (typeof error === "string") {
-    return error
+export function toDisplayString(value: unknown): string {
+  if (typeof value === "string") {
+    return value
   }
-  const isZodError = !!error && (typeof error === "object") && ("name" in error)
-    && ("issues" in error) && (error.name === "ZodError")
+  const isZodError = !!value && (typeof value === "object") && ("name" in value)
+    && ("issues" in value) && (value.name === "ZodError")
   if (isZodError) {
-    return JSON.stringify(error.issues, null, 2)
+    return JSON.stringify(value.issues, null, 2)
   }
-  if (error instanceof Error) {
-    return error.message
+  if (value instanceof Error) {
+    return value.message
   }
-  return inspect(error)
+  return inspect(value)
 }
 
 function isOk<O, E>(this: Result<O, E>): this is OkBranch<O> {
@@ -178,7 +178,7 @@ export function Ok<T>(value: T): OkBranch<T> {
 /**
  * Creates a failed result.
  *
- * By default, `error` is normalized with {@link stringifyError}. Pass `true`
+ * By default, `error` is normalized with {@link toDisplayString}. Pass `true`
  * for `raw` to preserve the original value and its type.
  */
 export function Err<E>(error: E, raw: true): ErrBranch<E>
@@ -193,7 +193,7 @@ export function Err<E>(
 ): ErrBranch<E> | ErrBranch<string> {
   return raw
     ? { type: ResultType.Err, error: error as E, ...resultOps }
-    : { type: ResultType.Err, error: stringifyError(error), ...resultOps }
+    : { type: ResultType.Err, error: toDisplayString(error), ...resultOps }
 }
 
 // -----------------------------------------------------------------------------
@@ -201,14 +201,14 @@ export function Err<E>(
 // -----------------------------------------------------------------------------
 
 function toJSON<O, E>(this: Result<O, E>): string {
-  return this.isOk() ? inspect(this.value) : stringifyError(this.error)
+  return this.isOk() ? inspect(this.value) : toDisplayString(this.error)
 }
 
 /**
  * Creates a string `Err` whose normalized error is prefixed with `name`.
  */
 export function NamedErr(name: string, error: unknown): ErrBranch<string> {
-  return Err(`${name}: ${stringifyError(error)}`)
+  return Err(`${name}: ${toDisplayString(error)}`)
 }
 
 /**

@@ -82,7 +82,7 @@ By default, `Err(error)` converts an unknown error to a string. Pass `true` as
 the second argument to preserve a structured error value.
 
 ```ts
-import { Err, Ok, stringifyError, type Result } from "strict-result"
+import { Err, Ok, toDisplayString, type Result } from "strict-result"
 
 interface HttpRequestError {
   message: string
@@ -104,7 +104,7 @@ async function safeFetch(
 
     return Ok(response)
   } catch (error) {
-    return Err({ message: stringifyError(error) }, true)
+    return Err({ message: toDisplayString(error) }, true)
   }
 }
 ```
@@ -116,7 +116,7 @@ By convention, name custom error helpers in PascalCase and end their names with
 constructors rather than `Error` classes or general-purpose functions.
 
 ```ts
-import { Err, stringifyError, type ErrBranch } from "strict-result"
+import { Err, toDisplayString, type ErrBranch } from "strict-result"
 
 interface HttpRequestError {
   message: string
@@ -127,7 +127,7 @@ function HttpErr(
   error: unknown,
   status?: number,
 ): ErrBranch<HttpRequestError> {
-  return Err({ message: stringifyError(error), status }, true)
+  return Err({ message: toDisplayString(error), status }, true)
 }
 ```
 
@@ -150,7 +150,7 @@ The fetch wrapper can then replace its inline custom errors with `HttpErr`:
 
      return Ok(response)
    } catch (error) {
--    return Err({ message: stringifyError(error) }, true)
+-    return Err({ message: toDisplayString(error) }, true)
 +    return HttpErr(error)
    }
  }
@@ -274,9 +274,9 @@ Pass `true` to preserve the original error value and type.
 Creates a string error prefixed with a name, such as
 `NamedErr("parse", error)`.
 
-#### `stringifyError(error)`
+#### `toDisplayString(value)`
 
-Converts an unknown thrown value to a useful string. It handles strings,
+Converts an unknown value to a useful display string. It handles strings,
 `Error` instances, Zod-like errors, plain objects, and circular references.
 
 #### `unpack(result, defaultValue)`

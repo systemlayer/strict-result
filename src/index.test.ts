@@ -4,7 +4,7 @@ import {
   Err,
   NamedErr,
   Ok,
-  stringifyError,
+  toDisplayString,
   unpack,
   type ErrBranch,
   type OkBranch,
@@ -178,12 +178,12 @@ test("Err has the same inner value in raw and default modes for strings", () => 
   assert.equal(Err("failure", true).error, Err("failure").error)
 })
 
-test("stringifyError handles Zod-like and circular values", () => {
+test("toDisplayString handles Zod-like and circular values", () => {
   const zodError = { name: "ZodError", issues: [{ path: ["name"], message: "Required" }] }
-  assert.equal(stringifyError(zodError), JSON.stringify(zodError.issues, null, 2))
+  assert.equal(toDisplayString(zodError), JSON.stringify(zodError.issues, null, 2))
   const circular: { self?: unknown } = {}
   circular.self = circular
-  assert.equal(stringifyError(circular), '{\n  "self": "[Circular]"\n}')
+  assert.equal(toDisplayString(circular), '{\n  "self": "[Circular]"\n}')
 })
 
 test("NamedErr prefixes a stringified error", () => {
