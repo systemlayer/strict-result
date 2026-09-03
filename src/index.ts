@@ -34,14 +34,18 @@ const resultOps: {
     defaultFn: (error: E) => U,
     mapFn: (value: O) => U,
   ) => U,
-  /**
-   * Converts the contained value or error into a JSON-style string.
-   *
-   * The returned string is not guaranteed to be reversible because circular
-   * references are replaced and errors may be normalized.
-   */
-  readonly toJSON: <O, E>(this: Result<O, E>) => string,
-} = { isOk, isErr, unwrap, unwrapOr, map, mapErr, mapOrElse, toJSON }
+  /** Converts the contained value or error into a useful display string. */
+  readonly toDisplayString: <O, E>(this: Result<O, E>) => string,
+} = {
+  isOk,
+  isErr,
+  unwrap,
+  unwrapOr,
+  map,
+  mapErr,
+  mapOrElse,
+  toDisplayString: resultToDisplayString,
+}
 
 type ResultOpsType = typeof resultOps
 
@@ -193,7 +197,7 @@ export function Err<E>(
 // Additional functionality for Result that do not have a Rust equivalent.
 // -----------------------------------------------------------------------------
 
-function toJSON<O, E>(this: Result<O, E>): string {
+function resultToDisplayString<O, E>(this: Result<O, E>): string {
   return toDisplayString(this.isOk() ? this.value : this.error)
 }
 
