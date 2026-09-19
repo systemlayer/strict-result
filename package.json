@@ -1,6 +1,6 @@
 {
   "name": "strict-result",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "type": "module",
   "description": "Handle success and failure explicitly with a type-safe, Rust-inspired Result for TypeScript.",
   "license": "MIT",
