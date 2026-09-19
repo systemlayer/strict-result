@@ -7,3 +7,4 @@
 - When writing new code, prefer placing declarations before their first use. This is a soft preference, not a hard rule.
 - For long functions, prefer an explicit `return` keyword over arrow-function syntax with an implicit return.
 - When adding JSDoc to TypeScript files, avoid redundant tags; for example, omit `@returns` when the function already declares a TypeScript return type.
+- Do not use JSDoc `@link` tags.
