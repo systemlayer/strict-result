@@ -29,10 +29,9 @@ function assertResultOpsTypes(result: Result<number, { code: string }>): void {
   const mapped: Result<string, { code: string }> = result.map(value => `${value}`)
   const mappedError: Result<number, string> = result.mapErr(error => error.code)
   const folded: string = result.mapOrElse(error => error.code, value => `${value}`)
-  const displayString: string = result.toDisplayString()
   // These values only exist to check their types.
   // Using void keeps TypeScript happy without doing anything with them.
-  void [value, fallback, mapped, mappedError, folded, displayString]
+  void [value, fallback, mapped, mappedError, folded]
   // @ts-expect-error The fallback must match the successful value type.
   result.unwrapOr("fallback")
   // @ts-expect-error The map callback receives the successful value type.
@@ -169,19 +168,15 @@ test("mapOrElse invokes only the Err callback with the error", () => {
   assert.deepEqual(output, { message: "broken" })
 })
 
-test("Result.toDisplayString serializes successful primitives and structured values", () => {
-  assert.equal(Ok(21).toDisplayString(), "21")
-  assert.equal(Ok("value").toDisplayString(), "value")
+test("toDisplayString serializes primitives and structured values", () => {
+  assert.equal(toDisplayString(21), "21")
+  assert.equal(toDisplayString("value"), "value")
   const circular: { self?: unknown } = {}
   circular.self = circular
-  assert.equal(Ok(circular).toDisplayString(), '{"self":"[Circular]"}')
+  assert.equal(toDisplayString(circular), '{"self":"[Circular]"}')
   assert.equal("toJSON" in Ok(21), false)
-})
-
-test("Result.toDisplayString serializes raw errors according to their shape", () => {
-  assert.equal(Err("failure", true).toDisplayString(), "failure")
-  assert.equal(Err(new Error("failure"), true).toDisplayString(), "failure")
-  assert.equal(Err({ code: "broken" }, true).toDisplayString(), '{"code":"broken"}')
+  assert.equal(toDisplayString(new Error("failure")), "failure")
+  assert.equal(toDisplayString({ code: "broken" }), '{"code":"broken"}')
 })
 
 test("Err stringifies errors unless raw mode is requested", () => {

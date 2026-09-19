@@ -34,8 +34,6 @@ const resultOps: {
     defaultFn: (error: E) => U,
     mapFn: (value: O) => U,
   ) => U,
-  /** Converts the contained value or error into a useful display string. */
-  readonly toDisplayString: <O, E>(this: Result<O, E>) => string,
 } = {
   isOk,
   isErr,
@@ -44,7 +42,6 @@ const resultOps: {
   map,
   mapErr,
   mapOrElse,
-  toDisplayString: resultToDisplayString,
 }
 
 type ResultOpsType = typeof resultOps
@@ -202,10 +199,6 @@ export function Err<E>(
 // -----------------------------------------------------------------------------
 // Additional functionality for Result that do not have a Rust equivalent.
 // -----------------------------------------------------------------------------
-
-function resultToDisplayString<O, E>(this: Result<O, E>): string {
-  return toDisplayString(this.isOk() ? this.value : this.error)
-}
 
 /**
  * Creates a string `Err` whose normalized error is prefixed with `prefix`.
