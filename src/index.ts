@@ -6,9 +6,9 @@ const enum ResultType {
 // Declare readonly properties directly so emitted declarations retain their JSDoc;
 // wrapping the object type in Readonly could obscure it behind a mapped type in editors.
 const resultOps: {
-  /** Checks whether this result is an {@link OkBranch} and narrows its type. */
+  /** Checks whether this result is an `OkBranch` and narrows its type. */
   readonly isOk: <O, E>(this: Result<O, E>) => this is OkBranch<O>,
-  /** Checks whether this result is an {@link ErrBranch} and narrows its type. */
+  /** Checks whether this result is an `ErrBranch` and narrows its type. */
   readonly isErr: <O, E>(this: Result<O, E>) => this is ErrBranch<E>,
   /**
    * Extracts the successful value.
@@ -49,13 +49,13 @@ const resultOps: {
 
 type ResultOpsType = typeof resultOps
 
-/** The successful branch of a {@link Result}, containing `value`. */
+/** The successful branch of a `Result`, containing `value`. */
 export type OkBranch<O> = {
   readonly type: ResultType.Ok,
   readonly value: O,
 } & ResultOpsType
 
-/** The failed branch of a {@link Result}, containing `error`. */
+/** The failed branch of a `Result`, containing `error`. */
 export type ErrBranch<E> = {
   readonly type: ResultType.Err,
   readonly error: E,
@@ -181,7 +181,7 @@ export function Ok<T>(value: T): OkBranch<T> {
 /**
  * Creates a failed result.
  *
- * By default, `error` is normalized with {@link toDisplayString}. Pass `true`
+ * By default, `error` is normalized with `toDisplayString`. Pass `true`
  * for `raw` to preserve the original value and its type.
  */
 export function Err<E>(error: E, raw: true): ErrBranch<E>
@@ -215,7 +215,7 @@ export function PrefixedErr(prefix: string, error: unknown): ErrBranch<string> {
 }
 
 /**
- * The object produced by {@link unpack}, containing a non-nullish value and an
+ * The object produced by `unpack`, containing a non-nullish value and an
  * error or `null`.
  */
 export type UnpackedResult<O, E> = {
@@ -224,7 +224,7 @@ export type UnpackedResult<O, E> = {
 }
 
 /**
- * Converts a {@link Result} into an {@link UnpackedResult} with both `value` and
+ * Converts a `Result` into an `UnpackedResult` with both `value` and
  * `error` fields.
  *
  * - An `Err` uses `defaultValue` and preserves its error.
