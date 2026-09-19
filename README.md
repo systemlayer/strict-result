@@ -299,7 +299,6 @@ Converts a `Result` into `{ value, error }`. An `Err` uses `defaultValue`; an
 | `map(fn)` | Transforms an `Ok` value and leaves an `Err` unchanged. |
 | `mapErr(fn)` | Transforms an `Err` error and leaves an `Ok` unchanged. |
 | `mapOrElse(defaultFn, mapFn)` | Maps either branch into a plain value. |
-| `toDisplayString()` | Converts the contained value or error to a display string. |
 
 ## Runtime support
 
